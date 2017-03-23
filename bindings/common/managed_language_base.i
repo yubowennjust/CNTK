@@ -35,7 +35,7 @@
 %template(AxisVector) std::vector<CNTK::Axis>;
 %template(NDArrayViewVector) std::vector<std::shared_ptr<CNTK::NDArrayView>>;
 %template(BoolVector) std::vector<bool>;
-%template(IntVector) std::vector<int>; 
+%template(IntVector) std::vector<int>;
 %template(DeviceDescriptorVector) std::vector<CNTK::DeviceDescriptor>;
 %template(UnorderedMapVariableValuePtr) std::unordered_map<CNTK::Variable, std::shared_ptr<CNTK::Value>>;
 %template(UnorderedMapVariableVariable) std::unordered_map<CNTK::Variable, CNTK::Variable>;
@@ -46,12 +46,27 @@
 %template() std::pair<size_t, double>;
 %template() std::vector<std::pair<size_t, double>>;
 
+%rename(sequenceReduceSum) CNTK::Sequence::ReduceSum;
+%rename(sequenceSlice) CNTK::Sequence::Slice;
+
 #define %ignore_function %rename("$ignore", %$isfunction, fullname=1)
 #define %ignore_class %rename("$ignore", %$isclass, fullname=1)
 #define %ignore_namespace %rename("$ignore", %$isnamespace, fullname=1)
 #define %ignore_variable %rename("$ignore", %$isvariable, fullname=1)
 // It seems that SWIG does not understand %$isstruct.
 #define %ignore_struct %rename("$ignore", fullname=1)
+
+// These arent exported from the CNTK C++ library
+%ignore CNTK::Internal::IsReversingTensorShapesInErrorMessagesEnabled;
+%ignore CNTK::Internal::IsSettingDefaultDeviceAlwaysAllowed;
+%ignore CNTK::Internal::IsRenamingFunctionsAllowed;
+%ignore CNTK::Internal::IsAutomaticUnpackingOfPackedValuesDisabled;
+%ignore CNTK::Internal::GetComputationNetworkTraceLevel;
+%ignore CNTK::Internal::GetComputationNetworkTrackGapNans;
+%ignore CNTK::Internal::TensorBoardFileWriter::TensorBoardFileWriter(const std::wstring& dir, const ::Microsoft::MSR::CNTK::ComputationNetworkPtr& modelToVisualize = nullptr);
+%ignore CNTK::Internal::Convolution;
+
+%ignore CNTK::Function::Function(const std::vector<Variable>& inputs, Dictionary&& functionConfig, const std::wstring& name = L"", const std::wstring& uid = Internal::GenerateUid(L"UserDefinedFunction"));
 
 // Ignore things in CNTKLibrary.h that are not exposed for C# Eval.
 %ignore CNTK::NDShape::NDShape(const std::initializer_list<size_t>& dimensions);
