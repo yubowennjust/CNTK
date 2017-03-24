@@ -247,6 +247,7 @@ bindings/java/JavaEvalTest/.idea
 bindings/java/JavaEvalTest/*.iml
 bindings/java/**/target
 bindings/java/**/*.jar
+Examples/Image/Classification/ResNet/Java/src/*.class
 
 # Examples and Tutorials
 Examples/Image/DataSets/Pascal/VOC*
