@@ -5,7 +5,7 @@
 # Written by Ross Girshick and Sean Bell
 # --------------------------------------------------------
 
-from cntk import output_variable, one_hot, times
+from cntk import output_variable
 from cntk.ops.functions import UserFunction
 import yaml
 import numpy as np
@@ -184,6 +184,7 @@ class ProposalTargetLayer(UserFunction):
 
         from easydict import EasyDict as edict
         __C = edict()
+        __C.TRAIN = edict()
         __C.TRAIN.RPN_POST_NMS_TOP_N = state['TRAIN_RPN_POST_NMS_TOP_N']
         __C.TRAIN.FG_FRACTION = state['TRAIN_FG_FRACTION']
         __C.TRAIN.FG_THRESH = state['TRAIN_FG_THRESH']

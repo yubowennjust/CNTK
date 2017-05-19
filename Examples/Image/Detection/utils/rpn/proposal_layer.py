@@ -5,7 +5,7 @@
 # Written by Ross Girshick and Sean Bell
 # --------------------------------------------------------
 
-from cntk import output_variable
+from cntk import output_variable, FreeDimension
 from cntk.ops.functions import UserFunction
 import numpy as np
 import yaml
@@ -53,8 +53,10 @@ class ProposalLayer(UserFunction):
         # (n, x1, y1, x2, y2) specifying an image batch index n and a
         # rectangle (x1, y1, x2, y2)
         # for CNTK the proposal shape is [4 x roisPerImage], and mirrored in Python
-        # TODO: cfg_key = str(self.phase) # either 'TRAIN' or 'TEST'
+
+        # cfg_key = str(self.phase) # either 'TRAIN' or 'TEST' --> use FreeDimension and set output size in fwd
         proposalShape = (self._TRAIN_RPN_POST_NMS_TOP_N, 4)
+        #proposalShape = (FreeDimension, 4)
 
         return [output_variable(proposalShape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
                                 name="pl_rois", needs_gradient=False)] # , name="rpn_rois"
@@ -210,6 +212,9 @@ class ProposalLayer(UserFunction):
 
         from easydict import EasyDict as edict
         __C = edict()
+        __C.TRAIN = edict()
+        __C.TEST = edict()
+
         __C.TRAIN.RPN_PRE_NMS_TOP_N = state['TRAIN_RPN_PRE_NMS_TOP_N']
         __C.TRAIN.RPN_POST_NMS_TOP_N = state['TRAIN_RPN_POST_NMS_TOP_N']
         __C.TRAIN.RPN_NMS_THRESH = state['TRAIN_RPN_NMS_THRESH']
@@ -218,7 +223,7 @@ class ProposalLayer(UserFunction):
         __C.TEST.RPN_PRE_NMS_TOP_N = state['TEST_RPN_PRE_NMS_TOP_N']
         __C.TEST.RPN_POST_NMS_TOP_N = state['TEST_RPN_POST_NMS_TOP_N']
         __C.TEST.RPN_NMS_THRESH = state['TEST_RPN_NMS_THRESH']
-        __C.TESTRPN_MIN_SIZE = state['TEST_RPN_MIN_SIZE']
+        __C.TEST.RPN_MIN_SIZE = state['TEST_RPN_MIN_SIZE']
 
         return ProposalLayer(inputs[0], inputs[1], inputs[2], name=name, cfg=__C, param_str=param_str)
 

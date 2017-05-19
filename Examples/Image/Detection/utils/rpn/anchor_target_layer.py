@@ -275,6 +275,7 @@ class AnchorTargetLayer(UserFunction):
 
         from easydict import EasyDict as edict
         __C = edict()
+        __C.TRAIN = edict()
         __C.TRAIN.RPN_CLOBBER_POSITIVES = state['TRAIN_RPN_CLOBBER_POSITIVES']
         __C.TRAIN.RPN_POSITIVE_OVERLAP = state['TRAIN_RPN_POSITIVE_OVERLAP']
         __C.TRAIN.RPN_NEGATIVE_OVERLAP = state['TRAIN_RPN_NEGATIVE_OVERLAP']
