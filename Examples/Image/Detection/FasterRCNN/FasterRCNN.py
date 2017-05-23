@@ -41,7 +41,7 @@ from cntk.logging.graph import find_by_name, plot
 from cntk.losses import cross_entropy_with_softmax
 from cntk.metrics import classification_error
 from utils.rpn.cntk_smoothL1_loss import SmoothL1Loss
-from utils.fast_rcnn.bbox_transform import bbox_transform_inv
+from utils.rpn.bbox_transform import bbox_transform_inv
 from utils.rpn.rpn_helpers import create_rpn, create_proposal_target_layer
 from config import cfg
 from cntk_helpers import visualizeResultsFaster
@@ -55,7 +55,7 @@ except:
 
 ###############################################################
 ###############################################################
-fastmode = False
+fastmode = True
 graph_type = "png" # "png" or "pdf"
 train_e2e = cfg["CNTK"].TRAIN_E2E
 make_mode = cfg["CNTK"].MAKE_MODE
@@ -137,12 +137,9 @@ def get_4stage_learning_parameters():
 
     # Learning parameters
     lrp['l2_reg_weight'] = 0.0005
-    if base_model_to_use == "VGG16":
-        lrp['momentumPerMB'] = 0.9
-    else:
-        lrp['momentumPerMB'] = 0.9 # also tried 0.5
+    lrp['momentumPerMB'] = 0.9
 
-    # rpn training: lr = [0.001] * 12 + [0.0001] * 4, momentum = 0.9, weight decay = 0.0005 (cf. stage1_rpn_solver60k80k.pt)
+    # caffe rpn training: lr = [0.001] * 12 + [0.0001] * 4, momentum = 0.9, weight decay = 0.0005 (cf. stage1_rpn_solver60k80k.pt)
     if base_model_to_use == "VGG16":
         lrp['rpn_epochs'] = 16
         lrp['rpn_lr_per_sample'] = [0.001] * 12 + [0.0001] * 4
@@ -150,7 +147,6 @@ def get_4stage_learning_parameters():
         if dataset == "Pascal":
             lrp['rpn_epochs'] = 2 #16
             lrp['rpn_lr_per_sample'] = [0.001] * 12 + [0.0001] * 4
-            #lrp['rpn_lr_per_sample'] = [0.002] * 4 + [0.001] * 4 + [0.0005] * 4 + [0.0001] * 4
         else:
             lrp['rpn_epochs'] = 1 if fastmode else 16
             lrp['rpn_lr_per_sample'] = [0.002] * 4 + [0.001] * 4 + [0.0005] * 4 + [0.0001] * 4
@@ -160,16 +156,15 @@ def get_4stage_learning_parameters():
         # The below learning rates are then too small for the other layers and yield bad results.
         lrp['rpn_lr_per_sample'] = [x * 0.01 for x in lrp['rpn_lr_per_sample']]
 
-    # frcn training: lr = [0.001] * 6 + [0.0001] * 2, momentum = 0.9, weight decay = 0.0005 (cf. stage1_fast_rcnn_solver30k40k.pt)
+    # caffe frcn training: lr = [0.001] * 6 + [0.0001] * 2, momentum = 0.9, weight decay = 0.0005 (cf. stage1_fast_rcnn_solver30k40k.pt)
     if base_model_to_use == "VGG16":
         lrp['frcn_epochs'] = 8
         lrp['frcn_lr_per_sample'] = [0.001] * 6 + [0.0001] * 2
     else:
         if dataset == "Pascal":
             lrp['frcn_epochs'] = 8
-            lrp['frcn_lr_per_sample'] = [0.00001] * 6 + [0.000001] * 2 # if fc layers are initialized with normal(0.01) start with 0.000001
-            #lrp['frcn_lr_per_sample'] = [0.001] * 6 + [0.0001] * 2
-            #lrp['frcn_lr_per_sample'] = [0.0002] * 8 + [0.001] * 6 + [0.00001] * 6
+            lrp['frcn_lr_per_sample'] = [0.00001] * 6 + [0.000001] * 2
+            #lrp['frcn_lr_per_sample'] = [0.001] * 6 + [0.0001] * 2 # --> loss goes to nan
         else:
             lrp['frcn_epochs'] = 1 if fastmode else 20
             lrp['frcn_lr_per_sample'] = [0.00002] * 8 + [0.00001] * 6 + [0.000001] * 6
@@ -299,10 +294,10 @@ def faster_rcnn_predictor(features, scaled_gt_boxes):
     conv_out = conv_layers(feat_norm)
 
     # RPN
-    rpn_rois, rpn_losses = create_rpn(conv_out, scaled_gt_boxes, im_info, cfg,
+    rpn_rois, rpn_losses = create_rpn(conv_out, scaled_gt_boxes, im_info,
                                       proposal_layer_param_string=proposal_layer_params)
     rois, label_targets, bbox_targets, bbox_inside_weights = \
-        create_proposal_target_layer(rpn_rois, scaled_gt_boxes, num_classes=num_classes, cfg=cfg)
+        create_proposal_target_layer(rpn_rois, scaled_gt_boxes, num_classes=num_classes)
 
     # Fast RCNN
     cls_score, bbox_pred = create_fast_rcnn_predictor(conv_out, rois, fc_layers)
@@ -369,7 +364,7 @@ def train_model(image_input, roi_input, loss, pred_error,
         loss = combine([loss])
     # Instantiate the trainer object
     learner = momentum_sgd(loss.parameters, lr_schedule, mm_schedule, l2_regularization_weight=l2_reg_weight,
-                           unit_gain=False, use_mean_gradient=True)
+                           unit_gain=False) #, use_mean_gradient=True)
     trainer = Trainer(None, (loss, pred_error), learner)
 
     # Create the minibatch source
@@ -508,7 +503,7 @@ def train_faster_rcnn_alternating(debug_output=False):
         #conv_out = conv_layers(image_input)
 
         # RPN
-        rpn_rois, rpn_losses = create_rpn(conv_out, scaled_gt_boxes, im_info, cfg,
+        rpn_rois, rpn_losses = create_rpn(conv_out, scaled_gt_boxes, im_info,
                                           proposal_layer_param_string=proposal_layer_params)
 
         stage1_rpn_network = combine([rpn_rois, rpn_losses])
@@ -555,7 +550,7 @@ def train_faster_rcnn_alternating(debug_output=False):
         rpn_losses = rpn_net.outputs[1] # required for training rpn in stage 2
 
         rois, label_targets, bbox_targets, bbox_inside_weights = \
-            create_proposal_target_layer(rpn_rois, scaled_gt_boxes, num_classes=num_classes, cfg=cfg)
+            create_proposal_target_layer(rpn_rois, scaled_gt_boxes, num_classes=num_classes)
 
         #rois = user_function(DebugLayer(rois, debug_name="debug_ptl_rois"))
         #label_targets = user_function(DebugLayer(label_targets, debug_name="debug_ptl_label_targets"))

@@ -1,6 +1,8 @@
-# --------------------------------------------------------
-# Copyright (c) 2017 Microsoft
-# --------------------------------------------------------
+# Copyright (c) Microsoft. All rights reserved.
+
+# Licensed under the MIT license. See LICENSE.md file in the project root
+# for full license information.
+# ==============================================================================
 
 from cntk import output_variable
 from cntk.ops.functions import UserFunction
@@ -9,9 +11,9 @@ import numpy as np
 DEBUG = False
 
 class SmoothL1Loss(UserFunction):
-    """
+    '''
     Computes a smooth L1 loss
-    """
+    '''
 
     def __init__(self, arg1, arg2, arg3, name='SmoothL1Loss'):
         super(SmoothL1Loss, self).__init__([arg1, arg2, arg3], name=name)
@@ -40,11 +42,6 @@ class SmoothL1Loss(UserFunction):
         loss = x - .5
         l2 = x * x * .5
         loss[lt1] = l2[lt1]
-
-        #print("SmoothL1: predictions.shape: {}".format(predictions.shape))
-        #print("SmoothL1: targets.shape: {}".format(targets.shape))
-        #print("SmoothL1: bbox_inside_weights.shape: {}".format(bbox_inside_weights.shape))
-        #print("SmoothL1: loss.shape: {}".format(loss.shape))
 
         return diff, loss
 

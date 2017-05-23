@@ -1,30 +1,33 @@
-# --------------------------------------------------------
-# Faster R-CNN
-# Copyright (c) 2015 Microsoft
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Ross Girshick and Sean Bell
-# --------------------------------------------------------
+# Copyright (c) Microsoft. All rights reserved.
+
+# Licensed under the MIT license. See LICENSE.md file in the project root
+# for full license information.
+# ==============================================================================
 
 from cntk import output_variable, FreeDimension
 from cntk.ops.functions import UserFunction
 import numpy as np
 import yaml
 from utils.rpn.generate_anchors import generate_anchors
-from utils.fast_rcnn.bbox_transform import bbox_transform_inv, clip_boxes
-from utils.fast_rcnn.nms_wrapper import nms
+from utils.rpn.bbox_transform import bbox_transform_inv, clip_boxes
+from utils.rpn.nms_wrapper import nms
+
+try:
+    from config import cfg
+except ImportError:
+    from utils.default_config import cfg
 
 DEBUG = False
 
 class ProposalLayer(UserFunction):
-    """
+    '''
     Outputs object detection proposals by applying estimated bounding-box
     transformations to a set of regular boxes (called "anchors").
-    """
+    '''
 
-    def __init__(self, arg1, arg2, arg3, name='ProposalLayer', param_str=None, cfg=None):
+    def __init__(self, arg1, arg2, arg3, name='ProposalLayer', param_str=None):
         super(ProposalLayer, self).__init__([arg1, arg2, arg3], name=name)
         self.param_str_ = param_str if param_str is not None else "'feat_stride': 16\n'scales':\n - 8 \n - 16 \n - 32"
-        self._cfg = cfg
 
         # parse the layer parameter string, which must be valid YAML
         layer_params = yaml.load(self.param_str_)
@@ -32,16 +35,6 @@ class ProposalLayer(UserFunction):
         anchor_scales = layer_params.get('scales', (8, 16, 32))
         self._anchors = generate_anchors(scales=np.array(anchor_scales))
         self._num_anchors = self._anchors.shape[0]
-
-        self._TRAIN_RPN_PRE_NMS_TOP_N = 12000 if cfg is None else cfg["TRAIN"].RPN_PRE_NMS_TOP_N
-        self._TRAIN_RPN_POST_NMS_TOP_N = 2000 if cfg is None else cfg["TRAIN"].RPN_POST_NMS_TOP_N
-        self._TRAIN_RPN_NMS_THRESH = 0.7 if cfg is None else cfg["TRAIN"].RPN_NMS_THRESH
-        self._TRAIN_RPN_MIN_SIZE = 16 if cfg is None else cfg["TRAIN"].RPN_MIN_SIZE
-
-        self._TEST_RPN_PRE_NMS_TOP_N = 6000 if cfg is None else cfg["TEST"].RPN_PRE_NMS_TOP_N
-        self._TEST_RPN_POST_NMS_TOP_N = 300 if cfg is None else cfg["TEST"].RPN_POST_NMS_TOP_N
-        self._TEST_RPN_NMS_THRESH = 0.7 if cfg is None else cfg["TEST"].RPN_NMS_THRESH
-        self._TEST_RPN_MIN_SIZE = 16 if cfg is None else cfg["TEST"].RPN_MIN_SIZE
 
         if DEBUG:
             print ('feat_stride: {}'.format(self._feat_stride))
@@ -55,7 +48,7 @@ class ProposalLayer(UserFunction):
         # for CNTK the proposal shape is [4 x roisPerImage], and mirrored in Python
 
         # cfg_key = str(self.phase) # either 'TRAIN' or 'TEST' --> use FreeDimension and set output size in fwd
-        proposalShape = (self._TRAIN_RPN_POST_NMS_TOP_N, 4)
+        proposalShape = (cfg["TRAIN"].RPN_POST_NMS_TOP_N, 4)
         #proposalShape = (FreeDimension, 4)
 
         return [output_variable(proposalShape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
@@ -75,18 +68,22 @@ class ProposalLayer(UserFunction):
         # take after_nms_topN proposals after NMS
         # return the top proposals (-> RoIs top, scores top)
 
-        if len(outputs_to_retain) == 0:
-            print("EVAL")
+        # TODO: remove 'False and' once FreeDimension works
+        if False and len(outputs_to_retain) == 0:
+            # print("EVAL")
+            pre_nms_topN = cfg["TEST"].RPN_PRE_NMS_TOP_N
+            post_nms_topN = cfg["TEST"].RPN_POST_NMS_TOP_N
+            nms_thresh = cfg["TEST"].RPN_NMS_THRESH
+            min_size = cfg["TEST"].RPN_MIN_SIZE
+        else:
+            pre_nms_topN = cfg["TRAIN"].RPN_PRE_NMS_TOP_N
+            post_nms_topN = cfg["TRAIN"].RPN_POST_NMS_TOP_N
+            nms_thresh = cfg["TRAIN"].RPN_NMS_THRESH
+            min_size = cfg["TRAIN"].RPN_MIN_SIZE
 
         bottom = arguments
         assert bottom[0].shape[0] == 1, \
             'Only single item batches are supported'
-
-        # TODO: cfg_key = str(self.phase) # either 'TRAIN' or 'TEST'
-        pre_nms_topN  = self._TRAIN_RPN_PRE_NMS_TOP_N
-        post_nms_topN = self._TRAIN_RPN_POST_NMS_TOP_N
-        nms_thresh    = self._TRAIN_RPN_NMS_THRESH
-        min_size      = self._TRAIN_RPN_MIN_SIZE
 
         # the first set of _num_anchors channels are bg probs
         # the second set are the fg probs, which we want
@@ -183,8 +180,6 @@ class ProposalLayer(UserFunction):
         # for CNTK: add batch axis to output shape
         proposals.shape = (1,) + proposals.shape
 
-        #print("ProposalLayer: proposals.shape: {}".format(proposals.shape))
-
         return None, proposals
 
     def backward(self, state, root_gradients, variables):
@@ -192,22 +187,11 @@ class ProposalLayer(UserFunction):
         pass
 
     def clone(self, cloned_inputs):
-        return ProposalLayer(cloned_inputs[0], cloned_inputs[1], cloned_inputs[2], cfg=self._cfg, param_str=self.param_str_)
+        return ProposalLayer(cloned_inputs[0], cloned_inputs[1], cloned_inputs[2], param_str=self.param_str_)
 
     def serialize(self):
         internal_state = {}
         internal_state['param_str'] = self.param_str_
-
-        # store cfg values in state
-        internal_state['TRAIN_RPN_PRE_NMS_TOP_N'] = self._TRAIN_RPN_PRE_NMS_TOP_N
-        internal_state['TRAIN_RPN_POST_NMS_TOP_N'] = self._TRAIN_RPN_POST_NMS_TOP_N
-        internal_state['TRAIN_RPN_NMS_THRESH'] = self._TRAIN_RPN_NMS_THRESH
-        internal_state['TRAIN_RPN_MIN_SIZE'] = self._TRAIN_RPN_MIN_SIZE
-
-        internal_state['TEST_RPN_PRE_NMS_TOP_N'] = self._TEST_RPN_PRE_NMS_TOP_N
-        internal_state['TEST_RPN_POST_NMS_TOP_N'] = self._TEST_RPN_POST_NMS_TOP_N
-        internal_state['TEST_RPN_NMS_THRESH'] = self._TEST_RPN_NMS_THRESH
-        internal_state['TEST_RPN_MIN_SIZE'] = self._TEST_RPN_MIN_SIZE
 
         return internal_state
 
@@ -215,22 +199,7 @@ class ProposalLayer(UserFunction):
     def deserialize(inputs, name, state):
         param_str = state['param_str']
 
-        from easydict import EasyDict as edict
-        __C = edict()
-        __C.TRAIN = edict()
-        __C.TEST = edict()
-
-        __C.TRAIN.RPN_PRE_NMS_TOP_N = state['TRAIN_RPN_PRE_NMS_TOP_N']
-        __C.TRAIN.RPN_POST_NMS_TOP_N = state['TRAIN_RPN_POST_NMS_TOP_N']
-        __C.TRAIN.RPN_NMS_THRESH = state['TRAIN_RPN_NMS_THRESH']
-        __C.TRAIN.RPN_MIN_SIZE = state['TRAIN_RPN_MIN_SIZE']
-
-        __C.TEST.RPN_PRE_NMS_TOP_N = state['TEST_RPN_PRE_NMS_TOP_N']
-        __C.TEST.RPN_POST_NMS_TOP_N = state['TEST_RPN_POST_NMS_TOP_N']
-        __C.TEST.RPN_NMS_THRESH = state['TEST_RPN_NMS_THRESH']
-        __C.TEST.RPN_MIN_SIZE = state['TEST_RPN_MIN_SIZE']
-
-        return ProposalLayer(inputs[0], inputs[1], inputs[2], name=name, cfg=__C, param_str=param_str)
+        return ProposalLayer(inputs[0], inputs[1], inputs[2], name=name, param_str=param_str)
 
 
 def _filter_boxes(boxes, min_size):

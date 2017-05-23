@@ -1,6 +1,8 @@
-# --------------------------------------------------------
-# Copyright (c) 2017 Microsoft
-# --------------------------------------------------------
+# Copyright (c) Microsoft. All rights reserved.
+
+# Licensed under the MIT license. See LICENSE.md file in the project root
+# for full license information.
+# ==============================================================================
 
 from cntk import output_variable
 from cntk.ops.functions import UserFunction
