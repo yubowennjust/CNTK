@@ -45,6 +45,7 @@ from utils.fast_rcnn.bbox_transform import bbox_transform_inv
 from utils.rpn.rpn_helpers import create_rpn, create_proposal_target_layer
 from config import cfg
 from cntk_helpers import visualizeResultsFaster
+from utils.rpn.cntk_debug import DebugLayer
 
 available_font = "arial.ttf"
 try:
@@ -54,6 +55,7 @@ except:
 
 ###############################################################
 ###############################################################
+fastmode = False
 graph_type = "png" # "png" or "pdf"
 train_e2e = cfg["CNTK"].TRAIN_E2E
 make_mode = cfg["CNTK"].MAKE_MODE
@@ -150,7 +152,7 @@ def get_4stage_learning_parameters():
             lrp['rpn_lr_per_sample'] = [0.001] * 12 + [0.0001] * 4
             #lrp['rpn_lr_per_sample'] = [0.002] * 4 + [0.001] * 4 + [0.0005] * 4 + [0.0001] * 4
         else:
-            lrp['rpn_epochs'] = 16
+            lrp['rpn_epochs'] = 1 if fastmode else 16
             lrp['rpn_lr_per_sample'] = [0.002] * 4 + [0.001] * 4 + [0.0005] * 4 + [0.0001] * 4
     if start_train_conv_node_name != None:
         # TODO: this should be handled through different learning rates for the conv layers only
@@ -169,7 +171,7 @@ def get_4stage_learning_parameters():
             #lrp['frcn_lr_per_sample'] = [0.001] * 6 + [0.0001] * 2
             #lrp['frcn_lr_per_sample'] = [0.0002] * 8 + [0.001] * 6 + [0.00001] * 6
         else:
-            lrp['frcn_epochs'] = 20
+            lrp['frcn_epochs'] = 1 if fastmode else 20
             lrp['frcn_lr_per_sample'] = [0.00002] * 8 + [0.00001] * 6 + [0.000001] * 6
     if start_train_conv_node_name != None:
         # TODO: this should be handled through different learning rates for the conv layers only
@@ -263,10 +265,14 @@ def create_fast_rcnn_predictor(conv_out, rois, fc_layers):
     roi_xy2 = slice(rois, 1, 2, 4)
     roi_wh = minus(roi_xy2, roi_xy1)
     roi_xywh = splice(roi_xy1, roi_wh, axis=1)
-    scaled_rois = element_times(roi_xywh, (1.0 / image_width))
+    scaled_rois = element_times(roi_xywh, (1.0 / image_width)) # --> out_bbox_regr.shape = (1, 68)
+    #scaled_rois = rois # --> out_bbox_regr.shape = (1, 68)
 
     # RCNN
+    #scaled_rois = user_function(DebugLayer(scaled_rois, debug_name="beforeROI-roi"))
+    #conv_out = user_function(DebugLayer(conv_out, debug_name="beforeROI-conv"))
     roi_out = roipooling(conv_out, scaled_rois, (roi_dim, roi_dim))
+    #roi_out = user_function(DebugLayer(roi_out, debug_name="afterROI"))
     fc_out = fc_layers(roi_out)
 
     # prediction head
@@ -362,7 +368,8 @@ def train_model(image_input, roi_input, loss, pred_error,
     if isinstance(loss, cntk.Variable):
         loss = combine([loss])
     # Instantiate the trainer object
-    learner = momentum_sgd(loss.parameters, lr_schedule, mm_schedule, l2_regularization_weight=l2_reg_weight, unit_gain=False)
+    learner = momentum_sgd(loss.parameters, lr_schedule, mm_schedule, l2_regularization_weight=l2_reg_weight,
+                           unit_gain=False, use_mean_gradient=True)
     trainer = Trainer(None, (loss, pred_error), learner)
 
     # Create the minibatch source
@@ -549,6 +556,11 @@ def train_faster_rcnn_alternating(debug_output=False):
 
         rois, label_targets, bbox_targets, bbox_inside_weights = \
             create_proposal_target_layer(rpn_rois, scaled_gt_boxes, num_classes=num_classes, cfg=cfg)
+
+        #rois = user_function(DebugLayer(rois, debug_name="debug_ptl_rois"))
+        #label_targets = user_function(DebugLayer(label_targets, debug_name="debug_ptl_label_targets"))
+        #bbox_targets = user_function(DebugLayer(bbox_targets, debug_name="debug_ptl_bbox_targets"))
+        #bbox_inside_weights = user_function(DebugLayer(bbox_inside_weights, debug_name="debug_ptl_bbiw"))
 
         # Fast RCNN
         fc_layers = clone_model(base_model, [pool_node_name], [last_hidden_node_name], CloneMethod.clone)
@@ -812,4 +824,4 @@ if __name__ == '__main__':
     if DEBUG_OUTPUT:
         eval_faster_rcnn_plot(eval_model, num_images_to_plot=500, debug_output=True)
 
-    eval_faster_rcnn_mAP(eval_model, globalvars['test_map_file'], globalvars['test_roi_file'])
+    #eval_faster_rcnn_mAP(eval_model, globalvars['test_map_file'], globalvars['test_roi_file'])

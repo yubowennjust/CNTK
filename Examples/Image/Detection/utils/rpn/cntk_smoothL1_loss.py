@@ -41,6 +41,11 @@ class SmoothL1Loss(UserFunction):
         l2 = x * x * .5
         loss[lt1] = l2[lt1]
 
+        #print("SmoothL1: predictions.shape: {}".format(predictions.shape))
+        #print("SmoothL1: targets.shape: {}".format(targets.shape))
+        #print("SmoothL1: bbox_inside_weights.shape: {}".format(bbox_inside_weights.shape))
+        #print("SmoothL1: loss.shape: {}".format(loss.shape))
+
         return diff, loss
 
     def backward(self, state, root_gradients, variables):

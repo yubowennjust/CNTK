@@ -59,7 +59,7 @@ class ProposalLayer(UserFunction):
         #proposalShape = (FreeDimension, 4)
 
         return [output_variable(proposalShape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
-                                name="pl_rois", needs_gradient=False)] # , name="rpn_rois"
+                                name="rpn_rois_raw", needs_gradient=False)] # , name="rpn_rois" | name="rpn_rois_raw"
 
     def forward(self, arguments, device=None, outputs_to_retain=None):
         # Algorithm:
@@ -74,6 +74,9 @@ class ProposalLayer(UserFunction):
         # apply NMS with threshold 0.7 to remaining proposals
         # take after_nms_topN proposals after NMS
         # return the top proposals (-> RoIs top, scores top)
+
+        if len(outputs_to_retain) == 0:
+            print("EVAL")
 
         bottom = arguments
         assert bottom[0].shape[0] == 1, \
@@ -179,6 +182,8 @@ class ProposalLayer(UserFunction):
         # batch inds are 0
         # for CNTK: add batch axis to output shape
         proposals.shape = (1,) + proposals.shape
+
+        #print("ProposalLayer: proposals.shape: {}".format(proposals.shape))
 
         return None, proposals
 

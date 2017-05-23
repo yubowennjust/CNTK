@@ -5,7 +5,7 @@
 # Written by Ross Girshick and Sean Bell
 # --------------------------------------------------------
 
-from cntk import output_variable
+from cntk import output_variable, FreeDimension
 from cntk.ops.functions import UserFunction
 import yaml
 import numpy as np
@@ -45,25 +45,29 @@ class ProposalTargetLayer(UserFunction):
         # sampled rois (0, x1, y1, x2, y2)
         # for CNTK the proposal shape is [4 x roisPerImage], and mirrored in Python
         rois_shape = (self._TRAIN_RPN_POST_NMS_TOP_N, 4)
+        #rois_shape = (FreeDimension, 4)
 
         # labels
         # for CNTK the labels shape is [1 x roisPerImage], and mirrored in Python
         labels_shape = (self._TRAIN_RPN_POST_NMS_TOP_N, self._num_classes)
+        #labels_shape = (FreeDimension, self._num_classes)
 
         # bbox_targets
         bbox_targets_shape = (self._TRAIN_RPN_POST_NMS_TOP_N, self._num_classes * 4)
+        #bbox_targets_shape = (FreeDimension, self._num_classes * 4)
 
         # bbox_inside_weights
         bbox_inside_weights_shape = (self._TRAIN_RPN_POST_NMS_TOP_N, self._num_classes * 4)
+        #bbox_inside_weights_shape = (FreeDimension, self._num_classes * 4)
 
         return [output_variable(rois_shape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
-                                name="ptl_rois", needs_gradient=False),
+                                name="rpn_target_rois_raw", needs_gradient=False),
                 output_variable(labels_shape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
-                                name="ptl_labels", needs_gradient=False),
+                                name="label_targets_raw", needs_gradient=False),
                 output_variable(bbox_targets_shape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
-                                name="ptl_bbox", needs_gradient=False),
+                                name="bbox_targets_raw", needs_gradient=False),
                 output_variable(bbox_inside_weights_shape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
-                                name="ptl_bbox_w", needs_gradient=False)]
+                                name="bbox_inside_w_raw", needs_gradient=False)]
 
     def forward(self, arguments, outputs, device=None, outputs_to_retain=None):
         bottom = arguments
@@ -156,6 +160,12 @@ class ProposalTargetLayer(UserFunction):
         # bbox_inside_weights
         bbox_inside_weights.shape = (1,) + bbox_inside_weights.shape # batch axis
         outputs[self.outputs[3]] = np.ascontiguousarray(bbox_inside_weights)
+
+        #print("PTL: all_roi.shape: {}".format(all_rois.shape))
+        #print("PTL: rois.shape: {}".format(rois.shape))
+        #print("PTL: labels_dense.shape: {}".format(labels_dense.shape))
+        #print("PTL: bbox_targets.shape: {}".format(bbox_targets.shape))
+        #print("PTL: bbox_inside_weights.shape: {}".format(bbox_inside_weights.shape))
 
 
     def backward(self, state, root_gradients, variables):
