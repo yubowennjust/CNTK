@@ -34,7 +34,7 @@ cfg = __C
 
 __C.CNTK = edict()
 
-__C.CNTK.TRAIN_E2E = False
+__C.CNTK.TRAIN_E2E = True
 __C.CNTK.MAKE_MODE = False
 __C.CNTK.DEBUG_OUTPUT = True
 

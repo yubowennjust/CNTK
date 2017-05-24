@@ -239,7 +239,7 @@ def create_mb_source(img_map_file, roi_map_file, img_height, img_width, img_chan
     rois_dim = 5 * n_rois
     roi_source = CTFDeserializer(roi_map_file, StreamDefs(roiAndLabel = StreamDef(field=roi_stream_name, shape=rois_dim, is_sparse=False)))
 
-    return MinibatchSource([image_source, roi_source], epoch_size=sys.maxsize, randomize=randomize, trace_level=reader_trace_level)
+    return MinibatchSource([image_source, roi_source], randomize=randomize, trace_level=reader_trace_level)
 
 def clone_model(base_model, from_node_names, to_node_names, clone_method):
     from_nodes = [find_by_name(base_model, node_name) for node_name in from_node_names]
@@ -283,7 +283,7 @@ def create_fast_rcnn_predictor(conv_out, rois, fc_layers):
     return cls_score, bbox_pred
 
 # Defines the Faster R-CNN network model for detecting objects in images
-def faster_rcnn_predictor(features, scaled_gt_boxes):
+def create_faster_rcnn_predictor(features, scaled_gt_boxes):
     # Load the pre-trained classification net and clone layers
     base_model = load_model(base_model_file)
     conv_layers = clone_model(base_model, [feature_node_name], [last_conv_node_name], clone_method=CloneMethod.freeze)
@@ -337,15 +337,6 @@ def create_eval_model(model, image_input):
     cls_pred = softmax(cls_score, axis=1, name='cls_pred')
     return combine([cls_pred, rpn_rois, bbox_regr])
 
-def mem_used():
-    '''
-    Return the non-swapped physical memory the Python process is using.
-    '''
-    import os
-    import psutil
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss
-
 def convert_gt_boxes(gt_boxes, im_width, name="converted_gt_boxes"):
     # For CNTK: convert and scale gt_box coords from x, y, w, h relative to x1, y1, x2, y2 absolute
     roi_xy1 = slice(gt_boxes, 1, 0, 2)
@@ -359,12 +350,12 @@ def convert_gt_boxes(gt_boxes, im_width, name="converted_gt_boxes"):
     return alias(scaled_gt_boxes, name=name)
 
 def train_model(image_input, roi_input, loss, pred_error,
-                lr_schedule, mm_schedule, l2_reg_weight, epochs_to_train):
+                lr_schedule, mm_schedule, l2_reg_weight, epochs_to_train, use_mean_gradient=False):
     if isinstance(loss, cntk.Variable):
         loss = combine([loss])
     # Instantiate the trainer object
     learner = momentum_sgd(loss.parameters, lr_schedule, mm_schedule, l2_regularization_weight=l2_reg_weight,
-                           unit_gain=False) #, use_mean_gradient=True)
+                           unit_gain=False, use_mean_gradient=use_mean_gradient)
     trainer = Trainer(None, (loss, pred_error), learner)
 
     # Create the minibatch source
@@ -385,7 +376,6 @@ def train_model(image_input, roi_input, loss, pred_error,
         sample_count = 0
         while sample_count < epoch_size:  # loop over minibatches in the epoch
             data = minibatch_source.next_minibatch(min(mb_size, epoch_size-sample_count), input_map=input_map)
-            print(mem_used())
             trainer.train_minibatch(data)                                    # update model with it
             sample_count += trainer.previous_minibatch_sample_count          # count samples processed so far
             progress_printer.update_with_trainer(trainer, with_metric=True)  # log progress
@@ -404,7 +394,7 @@ def train_faster_rcnn_e2e(debug_output=False):
     scaled_gt_boxes = convert_gt_boxes(roi_input, image_width, name='roi_input')
 
     # Instantiate the Faster R-CNN prediction model and loss function
-    predictions, loss, pred_error = faster_rcnn_predictor(image_input, scaled_gt_boxes)
+    predictions, loss, pred_error = create_faster_rcnn_predictor(image_input, scaled_gt_boxes)
 
     if debug_output:
         print("Storing graphs and models to %s." % globalvars['output_path'])
@@ -420,13 +410,15 @@ def train_faster_rcnn_e2e(debug_output=False):
     #   weight_decay: 0.0005
     # ==> CNTK: lr_per_sample = [0.001] * 10 + [0.0001] * 10 + [0.00001]
     l2_reg_weight = 0.0005
-    lr_per_sample = [0.001] * 10 + [0.0001] * 10 + [0.00001]
-    #lr_per_sample = [0.0005] * 10 + [0.0001] * 10 + [0.00001] * 10
+    #lr_per_sample = [0.001] * 10 + [0.0001] * 10 + [0.00001]
+    #use_mean_gradient = True
+    lr_per_sample = [0.00001] * 10 + [0.000001] * 10 + [0.000001]
+    use_mean_gradient = False
     lr_schedule = learning_rate_schedule(lr_per_sample, unit=UnitType.sample)
     mm_schedule = momentum_schedule(0.9)
 
     train_model(image_input, roi_input, loss, pred_error,
-                lr_schedule, mm_schedule, l2_reg_weight, epochs_to_train=max_epochs)
+                lr_schedule, mm_schedule, l2_reg_weight, epochs_to_train=max_epochs, use_mean_gradient=use_mean_gradient)
     return loss
 
 # Trains a Faster R-CNN model using 4-stage alternating training
