@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 from utils.rpn.generate_anchors import generate_anchors
 from utils.rpn.bbox_transform import bbox_transform_inv, clip_boxes
-from utils.rpn.nms_wrapper import nms
+from utils.nms.nms_wrapper import nms
 
 try:
     from config import cfg
@@ -46,13 +46,10 @@ class ProposalLayer(UserFunction):
         # (n, x1, y1, x2, y2) specifying an image batch index n and a
         # rectangle (x1, y1, x2, y2)
         # for CNTK the proposal shape is [4 x roisPerImage], and mirrored in Python
-
-        # cfg_key = str(self.phase) # either 'TRAIN' or 'TEST' --> use FreeDimension and set output size in fwd
-        proposalShape = (cfg["TRAIN"].RPN_POST_NMS_TOP_N, 4)
-        #proposalShape = (FreeDimension, 4)
+        proposalShape = (FreeDimension, 4)
 
         return [output_variable(proposalShape, self.inputs[0].dtype, self.inputs[0].dynamic_axes,
-                                name="rpn_rois_raw", needs_gradient=False)] # , name="rpn_rois" | name="rpn_rois_raw"
+                            name="rpn_rois_raw", needs_gradient=False)]
 
     def forward(self, arguments, device=None, outputs_to_retain=None):
         # Algorithm:
@@ -68,8 +65,8 @@ class ProposalLayer(UserFunction):
         # take after_nms_topN proposals after NMS
         # return the top proposals (-> RoIs top, scores top)
 
-        # TODO: remove 'False and' once FreeDimension works
-        if False and len(outputs_to_retain) == 0:
+        # use potentially different number of proposals for training vs evaluation
+        if len(outputs_to_retain) == 0:
             # print("EVAL")
             pre_nms_topN = cfg["TEST"].RPN_PRE_NMS_TOP_N
             post_nms_topN = cfg["TEST"].RPN_POST_NMS_TOP_N
