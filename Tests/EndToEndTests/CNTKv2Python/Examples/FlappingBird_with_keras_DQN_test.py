@@ -13,7 +13,7 @@ from cntk.device import try_set_default_device, gpu
 abs_path = os.path.dirname(os.path.abspath(__file__))
 example_dir = os.path.join(abs_path, "..", "..", "..", "..",
                              "Examples", "ReinforcementLearning", 
-                             "FlappyBirdWithKeras")
+                             "FlappingBirdWithKeras")
 sys.path.append(example_dir)
 current_dir = os.getcwd()
 os.chdir(example_dir)
@@ -25,7 +25,7 @@ os.chdir(example_dir)
 # Note: please ignore the UserWarning the test emits due to a newer 
 # API for Convolution2D function available.
  
-def test_FlappyBird_with_keras_DQN_noerror(device_id):
+def test_FlappingBird_with_keras_DQN_noerror(device_id):
     from cntk.ops.tests.ops_test_utils import cntk_device
     try_set_default_device(cntk_device(device_id))
     
@@ -33,18 +33,18 @@ def test_FlappyBird_with_keras_DQN_noerror(device_id):
     current_dir = os.getcwd()
     os.chdir(example_dir)
     
-    import FlappyBird_with_keras_DQN as fbgame
+    import FlappingBird_with_keras_DQN as fbgame
 
     model = fbgame.buildmodel()
     args = {'mode': 'Run'}
     res = fbgame.trainNetwork(model, args, internal_testing=True )
     
-    np.testing.assert_array_equal(res, 0, err_msg='Error in running Flappy Bird example', verbose=True)
+    np.testing.assert_array_equal(res, 0, err_msg='Error in running Flapping Bird example', verbose=True)
     
     args = {'mode': 'Train'}
     res = fbgame.trainNetwork(model, args, internal_testing=True )
     
-    np.testing.assert_array_equal(res, 0, err_msg='Error in testing Flappy Bird example', verbose=True)
+    np.testing.assert_array_equal(res, 0, err_msg='Error in testing Flapping Bird example', verbose=True)
     
     os.chdir(current_dir)
     print("Done")

@@ -42,7 +42,7 @@ BATCH = 32 # size of minibatch
 FRAME_PER_ACTION = 1
 LEARNING_RATE = 1e-4
 NUMRUNS = 500
-PRETRAINED_MODEL_URL_DEFAULT = 'https://cntk.ai/Models/FlappyBird_keras/FlappingBird_model.h5.model'
+PRETRAINED_MODEL_URL_DEFAULT = 'https://cntk.ai/Models/FlappingBird_keras/FlappingBird_model.h5.model'
 PRETRAINED_MODEL_FNAME =  'FlappingBird_model.h5'
 
 img_rows , img_cols = 80, 80
