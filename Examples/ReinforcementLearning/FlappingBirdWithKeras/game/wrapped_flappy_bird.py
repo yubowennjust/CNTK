@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import random
 
-import flappy_bird_utils
+from game import flappy_bird_utils
 import pygame
 import pygame.surfarray as surfarray
 from pygame.locals import *
