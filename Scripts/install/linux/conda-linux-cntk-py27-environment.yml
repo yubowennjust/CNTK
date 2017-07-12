@@ -21,7 +21,7 @@ dependencies:
 - setuptools=27.2.0=py27_0
 - six=1.10.0=py27_0
 - wheel=0.29.0=py27_0
-- scikit-learn=0.12.3=py27_0
+- scikit-learn=0.18.2=py27_0
 - pip:
   - pytest==3.0.3
   - sphinx==1.5.4
