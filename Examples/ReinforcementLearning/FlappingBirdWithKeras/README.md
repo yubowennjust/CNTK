@@ -8,7 +8,7 @@ by Ben Lau on training the FlappyBird game with Keras frontend. This tutorial
 used the CNTK backend and with very little change (commenting out a few specific
   references to TensorFlow) in the original code. 
 
-![](animation.gif)
+![](https://cntk.ai/jup/FlappingBird_animation.gif)
 
 Note: Few of the game assets originally published [here](https://github.com/sourabhv/FlapPyBird)
 and reused by Ben Lau have been reused. Since we have replaced the 
