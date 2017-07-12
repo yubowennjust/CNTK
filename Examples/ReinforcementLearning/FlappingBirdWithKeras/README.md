@@ -29,8 +29,7 @@ backend to be CNTK. The details are [here](https://docs.microsoft.com/en-us/cogn
 
 This example takes additional dependency on the following python packages:
 - pygame (`pip install pygame`)
-- scikit-learn (`pip install scikit-learn`)
-- skimage (`conda install scikit-image` on windows / `sudo apt-get python-skimage`)
+- scikit-learn (`conda install scikit-learn`)
 
 These packages are needed to perform image manipulation operation and interactivity
 of the RL agent with the game environment.
