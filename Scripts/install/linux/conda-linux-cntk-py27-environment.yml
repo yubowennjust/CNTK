@@ -22,7 +22,6 @@ dependencies:
 - six=1.10.0=py27_0
 - wheel=0.29.0=py27_0
 - scikit-learn=0.18.1=np111py27_0
-
 - pip:
   - pytest==3.0.3
   - sphinx==1.5.4
@@ -30,6 +29,6 @@ dependencies:
   - twine==1.8.1
   - gym[atari]==0.8.1
   - pydot-ng==1.0.0
-  - pygame==1.9.3
-  - keras==2.06
+  - scikit-image==0.12.3
+  - keras==2.05
   - pygame==1.9.3
