@@ -8,6 +8,16 @@ import numpy as np
 import os
 import sys
 
+os.environ["SDL_VIDEODRIVER"] = "dummy" 
+
+from keras import backend as K
+def set_keras_backend(backend):
+if K.backend() != backend:
+        os.environ['KERAS_BACKEND'] = backend
+        reload(K)
+        assert K.backend() == backend
+set_keras_backend("cntk")
+
 from cntk.device import try_set_default_device, gpu
 
 abs_path = os.path.dirname(os.path.abspath(__file__))
