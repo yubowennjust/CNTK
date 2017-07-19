@@ -12,7 +12,7 @@ os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 from keras import backend as K
 def set_keras_backend(backend):
-if K.backend() != backend:
+    if K.backend() != backend:
         os.environ['KERAS_BACKEND'] = backend
         reload(K)
         assert K.backend() == backend
