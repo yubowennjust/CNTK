@@ -16,7 +16,7 @@ def set_keras_backend(backend):
         os.environ['KERAS_BACKEND'] = backend
         reload(K)
         assert K.backend() == backend
-set_keras_backend("cntk")
+
 
 from cntk.device import try_set_default_device, gpu
 
@@ -38,6 +38,8 @@ os.chdir(example_dir)
 def test_FlappingBird_with_keras_DQN_noerror(device_id):
     from cntk.ops.tests.ops_test_utils import cntk_device
     try_set_default_device(cntk_device(device_id))
+    
+    set_keras_backend("cntk")
     
     sys.path.append(example_dir)
     current_dir = os.getcwd()
