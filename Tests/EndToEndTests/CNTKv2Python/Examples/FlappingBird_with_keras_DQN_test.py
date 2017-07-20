@@ -8,6 +8,7 @@ import numpy as np
 import os
 import platform
 import sys
+import pytest
 
 os.environ["SDL_VIDEODRIVER"] = "dummy" 
 os.environ['KERAS_BACKEND'] = 'cntk'
