@@ -1,17 +1,15 @@
 # Flapping Bird using Keras and Reinforcement Learning
 
 In CNTK 203 tutorial, we have introduced the basic concepts of reinforcement
-learning. In this tutorial, we show an easy way to train a popular game called
+learning. In this example, we show an easy way to train a popular game called
 FlappyBird using Deep Q Network (DQN). This tutorial draws heavily on the
 [original work](https://yanpanlau.github.io/2016/07/10/FlappyBird-Keras.html)
 by Ben Lau on training the FlappyBird game with Keras frontend. This tutorial
 used the CNTK backend and with very little change (commenting out a few specific
   references to TensorFlow) in the original code. 
 
-Note: Few of the game assets originally published [here](https://github.com/sourabhv/FlapPyBird)
-and reused by Ben Lau have been reused. Since we have replaced the 
-game environment components with different components drawn from public data 
-sources, we call the game Flapping Bird.
+Note: Since, we have replaced the game environment components with different components drawn 
+from public data sources, we call the game Flapping Bird.
 
 # Goals
 
@@ -65,3 +63,8 @@ The code has 4 steps:
 
 The details of the explanation can be found in Ben Lau's
 [original work](https://yanpanlau.github.io/2016/07/10/FlappyBird-Keras.html)
+
+# Acknowledgements
+- Ben Lau: Contributing [keras tutorial ](https://yanpanlau.github.io/2016/07/10/FlappyBird-Keras.html) with TensorFlow backend.
+- Bird sprite from [Open Game Art](https://opengameart.org/content/free-game-asset-grumpy-flappy-bird-sprite-sheets).
+- Shreyaan Pathak: Student at Northstar Middle School, Kirkland, WA for the cactus asset and process all the assets to fit the game.

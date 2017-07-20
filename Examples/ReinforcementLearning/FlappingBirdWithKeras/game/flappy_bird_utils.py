@@ -3,16 +3,16 @@ import sys
 def load():
     # path of player with different states
     PLAYER_PATH = (
-            'assets/sprites/bird-upflap.png',
-            'assets/sprites/bird-midflap.png',
-            'assets/sprites/bird-downflap.png'
+            'assets/sprites/newbird-upflap.png',
+            'assets/sprites/newbird-midflap.png',
+            'assets/sprites/newbird-downflap.png'
     )
 
     # path of background
     BACKGROUND_PATH = 'assets/sprites/background-black.png'
 
     # path of pipe
-    PIPE_PATH = 'assets/sprites/pipe-green.png'
+    PIPE_PATH = 'assets/sprites/cactus-green.png'
 
     IMAGES, SOUNDS, HITMASKS = {}, {}, {}
 

@@ -41,7 +41,7 @@ REPLAY_MEMORY = 50000 # number of previous transitions to remember
 BATCH = 32 # size of minibatch
 FRAME_PER_ACTION = 1
 LEARNING_RATE = 1e-4
-NUMRUNS = 500
+NUMRUNS = 400
 PRETRAINED_MODEL_URL_DEFAULT = 'https://cntk.ai/Models/FlappingBird_keras/FlappingBird_model.h5.model'
 PRETRAINED_MODEL_FNAME =  'FlappingBird_model.h5'
 
@@ -114,10 +114,15 @@ def trainNetwork(model, args, pretrained_model_url=None, internal_testing=False)
     x_t = skimage.transform.resize(x_t,(80,80))
     x_t = skimage.exposure.rescale_intensity(x_t,out_range=(0,255))
 
+    if internal_testing:
+        x_t = np.random.rand(x_t.shape[0], x_t.shape[1])
+
     s_t = np.stack((x_t, x_t, x_t, x_t), axis=2).astype(np.float32)
 
     #In Keras, need to reshape
     s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])  #1*80*80*4
+
+    print(s_t.shape, np.max(s_t), np.min(s_t) )
 
     if args['mode'] == 'Run':
         OBSERVE = 999999999    #We keep observe, never train
@@ -167,7 +172,7 @@ def trainNetwork(model, args, pretrained_model_url=None, internal_testing=False)
 
         x_t1 = x_t1.reshape(1, x_t1.shape[0], x_t1.shape[1], 1).astype(np.float32) #1x80x80x1
         s_t1 = np.append(x_t1, s_t[:, :, :, :3], axis=3)
-
+            
         # store the transition in D
         
         D.append((s_t, action_index, r_t, s_t1, terminal))
