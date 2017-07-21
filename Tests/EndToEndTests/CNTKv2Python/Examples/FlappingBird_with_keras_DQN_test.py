@@ -11,7 +11,7 @@ import sys
 import pytest
 
 os.environ["SDL_VIDEODRIVER"] = "dummy" 
-os.environ['KERAS_BACKEND'] = 'cntk'
+os.environ['KERAS_BACKEND'] = "cntk"
 
 from cntk.device import try_set_default_device, gpu
 
@@ -22,13 +22,6 @@ example_dir = os.path.join(abs_path, "..", "..", "..", "..",
 sys.path.append(example_dir)
 current_dir = os.getcwd()
 os.chdir(example_dir)
-
-# This example shows how the same keras model that runs on 
-# Tensorflow as posted at the github site of the author Ben Lau 
-# https://github.com/yanpanlau/Keras-FlappyBird) can be run
-# with CNTK API with minimum code change.
-# Note: please ignore the UserWarning the test emits due to a newer 
-# API for Convolution2D function available.
  
 def test_FlappingBird_with_keras_DQN_noerror(device_id):
     if platform.system() != 'Windows':
@@ -42,6 +35,9 @@ def test_FlappingBird_with_keras_DQN_noerror(device_id):
     
     import FlappingBird_with_keras_DQN as fbgame
 
+    # TODO: Currently the model is downloaded from a cached site
+    #       Change the code to pick up the model from a locally 
+    #       cached directory.
     model = fbgame.buildmodel()
     args = {'mode': 'Run'}
     res = fbgame.trainNetwork(model, args, internal_testing=True )
@@ -55,6 +51,7 @@ def test_FlappingBird_with_keras_DQN_noerror(device_id):
     np.testing.assert_array_equal(res, 0, \
         err_msg='Error in testing Flapping Bird example', verbose=True)
     
+    #TODO: Add a test case to start with a CNTK trained cached model
     os.chdir(current_dir)
     print("Done")
 

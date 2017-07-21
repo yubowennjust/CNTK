@@ -7,4 +7,5 @@
 '''
 CNTK Flappybird Game Env.
 '''
+# TODO: Remove * import 
 from .game import *

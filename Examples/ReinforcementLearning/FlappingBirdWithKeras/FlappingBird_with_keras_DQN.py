@@ -14,13 +14,12 @@ from skimage.transform import rotate
 from skimage.viewer import ImageViewer
 import sys
 
-# Loat the right urlretrieve based on python version
+# Load the right urlretrieve based on python version
 try: 
     from urllib.request import urlretrieve 
 except ImportError: 
     from urllib import urlretrieve
 
-#sys.path.append("game/")
 import game.wrapped_flappy_bird as game
 
 from keras.models import model_from_json
@@ -64,8 +63,7 @@ def pretrained_model_download(url, filename):
             except:
                 retry_cnt += 1
                 if retry_cnt == max_retries:
-                    print('Exceeded maximum retry count, aborting.')
-                    raise
+                    raise Exception('Exceeded maximum retry count, aborting.')
                 print('Failed to download, retrying.')
                 time.sleep(np.random.randint(1,10))
 
@@ -121,8 +119,6 @@ def trainNetwork(model, args, pretrained_model_url=None, internal_testing=False)
 
     #In Keras, need to reshape
     s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])  #1*80*80*4
-
-    print(s_t.shape, np.max(s_t), np.min(s_t) )
 
     if args['mode'] == 'Run':
         OBSERVE = 999999999    #We keep observe, never train
@@ -251,9 +247,9 @@ def main():
     playGame(args)
 
 if __name__ == "__main__":
-    from keras import backend as K
     # CNTK auto detects the GPU and is able to optimally allocate resources
     # Hence, these lines below are commented out.
+    # from keras import backend as K
     #if K.backend() == 'tensorflow':
     #    config = tf.ConfigProto()
     #    config.gpu_options.allow_growth = True
