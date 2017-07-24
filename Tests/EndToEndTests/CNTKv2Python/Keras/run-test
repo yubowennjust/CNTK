@@ -14,9 +14,9 @@ export KERAS_BACKEND=cntk
 collection_ignores=(
   # Insufficient dependencies
   keras/backend/backend_test.py
-  # Not on Windows
-  test_model_saving.py
-  test_multiprocessing.py
+  # TODO Not on Windows ?
+  #test_model_saving.py
+  #test_multiprocessing.py
   # Not in scope
   integration_tests
   test_documentation.py
@@ -25,18 +25,21 @@ collection_ignores=(
 test_ignores=(
     # Not in scope
     test_tfoptimizer
-    # TODO investigation needed
-    test_LambdaCallback
-    test_conv3d_transpose
+    # Needs newer NumPy version
     test_convert_weights
-    test_generator_enqueuer_fail_processes
-    test_generator_enqueuer_processes
-    test_generator_methods_interface
+    # TODO fails on Python 3.4 ?
     test_has_arg_positional_only
-    test_io_utils
-    test_lambda
-    test_merge
+    # TODO fails on Python 3.x ?
     test_warnings
+    # TODO investigation needed - fails on Windows?
+    #test_LambdaCallback
+    #test_conv3d_transpose
+    #test_generator_enqueuer_fail_processes
+    #test_generator_enqueuer_processes
+    #test_generator_methods_interface
+    #test_io_utils
+    #test_lambda
+    #test_merge
 )
 
 py.test \
