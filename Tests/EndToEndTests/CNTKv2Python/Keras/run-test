@@ -32,14 +32,14 @@ test_ignores=(
     # TODO fails on Python 3.x ?
     test_warnings
     # TODO investigation needed - fails on Windows?
-    #test_LambdaCallback
-    #test_conv3d_transpose
-    #test_generator_enqueuer_fail_processes
-    #test_generator_enqueuer_processes
-    #test_generator_methods_interface
-    #test_io_utils
-    #test_lambda
-    #test_merge
+    test_LambdaCallback
+    test_conv3d_transpose
+    test_generator_enqueuer_fail_processes
+    test_generator_enqueuer_processes
+    test_generator_methods_interface
+    test_io_utils
+    test_lambda
+    test_merge
 )
 
 py.test \
