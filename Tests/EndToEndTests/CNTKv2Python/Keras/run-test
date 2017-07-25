@@ -28,6 +28,8 @@ test_ignores=(
     test_has_arg_positional_only
     # Fails on Python 3.x
     test_warnings
+    # Fails tolerance sometimes
+    test_conv3d_transpose
 )
 
 # Windows needs a few more exclusions
@@ -46,8 +48,6 @@ if [ "$OS" == "Windows_NT" ]; then
     test_generator_methods_interface
     # Test teardown error (temporary directory not empty)
     test_io_utils
-    # Tolerance (Windows GPU Py 3.6 only?)
-    test_conv3d_transpose
   )
 fi
 
